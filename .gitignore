@@ -1,0 +1,17 @@
+*~
+bin/*
+CMakeFiles/*
+CMakeCache.txt
+Makefile
+cmake_install.cmake
+images
+tags
+docs
+*.jpg
+*.png
+*.gif
+*.gcov
+*.out
+*.log
+*.zip
+tmp
