@@ -7,7 +7,6 @@
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
 
-#include "log.hxx"
 #include "exceptions.hxx"
 #include "main.hxx"
 
@@ -84,12 +83,14 @@ get_MSSIM(const cv::Mat& i1, const cv::Mat& i2)
   return mssim;
 }
 
+
 static double
 get_avg_MSSIM(const cv::Mat& i1, const cv::Mat& i2)
 {
   auto mssim = get_MSSIM(i1, i2);
   return (mssim.val[0] + mssim.val[1] + mssim.val[2]) / 3;
 }
+
 
 static void
 match_template(cv::Point& match_loc, const cv::Mat& img, const cv::Mat& tpl)
@@ -104,8 +105,7 @@ match_template(cv::Point& match_loc, const cv::Mat& img, const cv::Mat& tpl)
   cv::matchTemplate(img, tpl, result, match_method);
   cv::normalize(result, result, 0, 1, cv::NORM_MINMAX, -1, cv::Mat());
 
-  // Localize the best match with minMaxLoc
-
+  // Locate the best match with minMaxLoc
   double min_val, max_val;
   cv::Point min_loc, max_loc;
   cv::minMaxLoc(result, &min_val, &max_val, &min_loc, &max_loc, cv::Mat());
@@ -123,40 +123,83 @@ match_template(cv::Point& match_loc, const cv::Mat& img, const cv::Mat& tpl)
 static void
 run()
 {
-  cv::Mat tpl_img(cv::imread(g_sample_file, 1));
-  if (tpl_img.empty()) {
-    throw ErrorException("failed to read sample image " + g_sample_file);
-  }
-  if (tpl_img.channels() > 1) {
-    cv::cvtColor(tpl_img, tpl_img, CV_BGR2GRAY);
-  }
-
-  cv::Mat in_img(cv::imread(g_input_file, 1));
-  if (in_img.empty()) {
-    throw ErrorException("failed to read input image " + g_sample_file);
-  }
-  cv::Mat in_gray_img = in_img.clone();
-  if (in_gray_img.channels() > 1) {
-    cv::cvtColor(in_gray_img, in_gray_img, CV_BGR2GRAY);
-  }
-
-  cv::Mat out_img(in_img.clone());
-
   cv::Point match_loc;
-  match_template(match_loc, in_gray_img, tpl_img);
-  printf("match_loc: %d,%d %dx%d\n",
-      match_loc.x, match_loc.y, tpl_img.rows, tpl_img.cols);
+  cv::Mat in_img;
+  cv::Mat in_img_inverted;
+  cv::Mat roi_img_nearest;
+  cv::Mat out_img;
+  double max_mssim{0.};
 
+  // Read input image forcing 3 channels
+  in_img = cv::imread(g_input_file, 1);
+  if (in_img.empty()) {
+    throw ErrorException("failed to read input image " + g_input_file);
+  }
 
-  cv::Rect roi(match_loc.x, match_loc.y, tpl_img.cols, tpl_img.rows);
-  cv::Mat roi_img(out_img(roi));
+  out_img = in_img.clone();
 
-  auto mssim = get_avg_MSSIM(roi_img, in_img(roi));
-  printf("MSSIM: %f\n", mssim);
+  // Convert input image to grayscale
+  if (in_img.channels() > 1) {
+    cv::cvtColor(in_img, in_img, CV_BGR2GRAY);
+  }
 
-  cv::GaussianBlur(roi_img, roi_img, cv::Size(3, 3), 10);
+  // Create inverted version of input image
+  cv::bitwise_not(in_img, in_img_inverted);
 
-  printf("writing to file %s\n", g_output_file.c_str());
+  // Suppress noise
+  cv::threshold(in_img, in_img, g_threshold, g_kThresholdColor, CV_THRESH_BINARY);
+  cv::threshold(in_img_inverted, in_img_inverted, g_threshold, g_kThresholdColor, CV_THRESH_BINARY);
+
+  // Process mask files
+  for (auto& mask_file : g_mask_files) {
+    cv::Mat tpl_img(cv::imread(mask_file, 1));
+    if (tpl_img.empty()) {
+      error_log("skipping empty/invalid mask image %sn", mask_file.c_str());
+    }
+    // Convert mask to grayscale
+    if (tpl_img.channels() > 1) {
+      cv::cvtColor(tpl_img, tpl_img, CV_BGR2GRAY);
+    }
+
+    // Create inverted version of the mask
+    cv::Mat tpl_img_inverted;
+    cv::bitwise_not(tpl_img, tpl_img_inverted);
+
+    for (auto& img : {in_img, in_img_inverted}) {
+      cv::Rect in_img_roi(0, img.rows - g_kBottomLineHeight, img.cols, g_kBottomLineHeight);
+
+      for (auto& tpl : {tpl_img, tpl_img_inverted}) {
+        // Find best matching location for current mask
+        match_template(match_loc, img(in_img_roi), tpl);
+
+        // Calculate similarity coefficient
+        cv::Rect roi(match_loc.x, match_loc.y + (img.rows - g_kBottomLineHeight),
+            tpl.cols, tpl.rows);
+        auto mssim = get_avg_MSSIM(tpl, img(roi));
+
+        verbose_log("roi: (%d, %d) %dx%d", roi.x, roi.y, roi.width, roi.height);
+        verbose_log("MSSIM for %s: %f", mask_file.c_str(), mssim);
+
+        if (mssim > max_mssim) {
+          max_mssim = mssim;
+          roi_img_nearest = out_img(roi);
+        }
+      }
+    }
+  }
+
+  if (max_mssim <= g_kMinMatchMssim) {
+    throw ErrorException("Unable to find a good matching pattern");
+  }
+
+  cv::GaussianBlur(roi_img_nearest, roi_img_nearest,
+      cv::Size(g_kKernelSize, g_kKernelSize),
+      g_kGaussianBlurDeviation);
+#if 0
+  //cv::rectangle(roi_img_nearest, cv::Point(0,0), cv::Point(roi_img_nearest.cols, roi_img_nearest.rows), cv::Scalar(0,200,200), -1, 8);
+#endif
+
+  verbose_log("writing to file %s", g_output_file.c_str());
   if (!cv::imwrite(g_output_file, out_img)) {
     throw ErrorException("failed to save to file " + g_output_file);
   }
@@ -179,13 +222,6 @@ main(int argc, char **argv)
           usage(false);
           exit(0);
 
-        case 's':
-          if (!file_exists(optarg)) {
-            throw InvalidCliArgException("File '%s' doesn't exist", optarg);
-          }
-          g_sample_file = optarg;
-          break;
-
         case 'i':
           if (!file_exists(optarg)) {
             throw InvalidCliArgException("File '%s' doesn't exist", optarg);
@@ -195,6 +231,10 @@ main(int argc, char **argv)
 
         case 'o':
           g_output_file = optarg;
+          break;
+
+        case 'v':
+          g_verbose++;
           break;
 
         case -1:
@@ -217,12 +257,14 @@ main(int argc, char **argv)
     exit(2);
   }
 
+  if (optind >= argc) {
+    error_log0("Mask image(s) expected");
+    usage(true);
+    exit(1);
+  }
+
   bool error{true};
   do {
-    if (g_sample_file.empty()) {
-      error_log0("sample file expected");
-      break;
-    }
     if (g_output_file.empty()) {
       error_log0("output file expected");
       break;
@@ -238,11 +280,25 @@ main(int argc, char **argv)
     exit(2);
   }
 
-  printf("sample file: %s\n", g_sample_file.c_str());
-  printf("input file: %s\n", g_input_file.c_str());
-  printf("output file: %s\n", g_output_file.c_str());
+  verbose_log("input file: %s", g_input_file.c_str());
+  verbose_log("output file: %s", g_output_file.c_str());
 
   try {
+    while (optind < argc) {
+      const char* filename = argv[optind++];
+      if (!filename) continue;
+      if (!file_exists(filename)) {
+        throw InvalidCliArgException("File '%s' doesn't exist", optarg);
+      }
+
+      g_mask_files.push_back(std::string(filename));
+    }
+    if (g_mask_files.empty()) {
+      error_log0("No valid mask files provided");
+      usage(true);
+      exit(2);
+    }
+
     run();
   } catch (ErrorException& e) {
     error_log("Fatal error: %s", e.what());

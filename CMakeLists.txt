@@ -1,5 +1,7 @@
 cmake_minimum_required (VERSION 2.6)
-project (CopyrightRemover CXX C)
+project (BlurPattern CXX C)
+
+option(DEBUG "Enable debugging support" OFF)
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}")
 set(CMAKE_MODULE_PATH "${CMAKE_CURRENT_SOURCE_DIR}/CMake" ${CMAKE_MODULE_PATH})
@@ -11,8 +13,11 @@ include(CheckSymbolExists)
 
 find_package(LibOpenCV REQUIRED)
 
-# XXX
-set (CMAKE_BUILD_TYPE "Debug")
+if (DEBUG)
+  set (CMAKE_BUILD_TYPE "Debug")
+else (DEBUG)
+  set (CMAKE_BUILD_TYPE "Release")
+endif (DEBUG)
 
 set(CMAKE_REQUIRED_INCLUDES "${CMAKE_REQUIRED_INCLUDES} ${LIBOPENCV_INCLUDE_DIR}")
 set(CMAKE_REQUIRED_LIBRARIES "${LIBOPENCV_CORE_LIB} ${LIBOPENCV_IMGPROC_LIB}
@@ -28,8 +33,9 @@ endif ()
 
 set(src src/main.cxx src/exceptions.cxx)
 
-add_executable(copyright_remover ${src})
-target_link_libraries(copyright_remover ${LIBS})
+set(target blurpat)
+add_executable(blurpat ${src})
+target_link_libraries(blurpat ${LIBS})
 
-install(TARGETS copyright_remover DESTINATION "bin")
+install(TARGETS blurpat DESTINATION "bin")
 # vim: et ts=2 sts=2 sw=2
