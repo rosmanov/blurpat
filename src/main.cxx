@@ -201,7 +201,7 @@ run()
   cv::GaussianBlur(roi_img_nearest, roi_img_nearest,
       cv::Size(g_kernelSize, g_kernelSize),
       g_gaussianBlurDeviation);
-#if 0 && defined(DEBUG)
+#if defined(DEBUG)
   cv::rectangle(roi_img_nearest, cv::Point(0,0), cv::Point(roi_img_nearest.cols, roi_img_nearest.rows), cv::Scalar(0,200,200), -1, 8);
 #endif
 
