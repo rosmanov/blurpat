@@ -40,8 +40,6 @@ const double g_kMinMatchMssim{0.1};
 /// Color used by cv::threshold()
 const int g_kThresholdColor{255};
 const int g_kBottomLineHeight{120};
-const int g_kKernelSize{3};
-const int g_kGaussianBlurDeviation{10};
 
 /////////////////////////////////////////////////////////////////////
 // CLI options
@@ -50,6 +48,8 @@ std::vector<std::string> g_mask_files;
 std::string g_input_file;
 std::string g_output_file;
 double g_threshold{80.};
+int g_kernelSize{3};
+int g_gaussianBlurDeviation{10};
 
 /////////////////////////////////////////////////////////////////////
 /// Template for `printf`-like function.
@@ -61,16 +61,20 @@ const char* g_usage_template =
 "                          to increase verbosity (e.g. -vv). Default: off.\n"
 " -i, --input              Path to input image.\n"
 " -o, --output             Path to output image.\n"
+" -d, --blur-deviation     Gaussian blur deviation. Default: 10\n"
+" -k, --blur-kernel-size   Gaussian blur kernel size. Default: 3\n"
 " -t, --threshold          Noise suppression threshold (0..255).\n";
 
-const char *g_short_options = "hvi:o:t:";
+const char *g_short_options = "hvi:o:d:k:t:";
 const struct option g_long_options[] = {
-  {"help",      no_argument,       NULL, 'h'},
-  {"verbose",   no_argument,       NULL, 'v'},
-  {"input",     required_argument, NULL, 'i'},
-  {"output",    required_argument, NULL, 'o'},
-  {"threshold", required_argument, NULL, 't'},
-  {0,           0,                 0,    0}
+  {"help",             no_argument,       NULL, 'h'},
+  {"verbose",          no_argument,       NULL, 'v'},
+  {"input",            required_argument, NULL, 'i'},
+  {"output",           required_argument, NULL, 'o'},
+  {"blur-deviation",   required_argument, NULL, 'd'},
+  {"blur-kernel-size", required_argument, NULL, 'k'},
+  {"threshold",        required_argument, NULL, 't'},
+  {0,                  0,                 0,    0}
 };
 
 /////////////////////////////////////////////////////////////////////

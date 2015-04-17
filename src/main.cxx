@@ -198,12 +198,11 @@ run()
     throw ErrorException("Unable to find a good matching pattern");
   }
 
-#if DEBUG
-  cv::rectangle(roi_img_nearest, cv::Point(0,0), cv::Point(roi_img_nearest.cols, roi_img_nearest.rows), cv::Scalar(0,200,200), -1, 8);
-#else
   cv::GaussianBlur(roi_img_nearest, roi_img_nearest,
-      cv::Size(g_kKernelSize, g_kKernelSize),
-      g_kGaussianBlurDeviation);
+      cv::Size(g_kernelSize, g_kernelSize),
+      g_gaussianBlurDeviation);
+#if 0 && defined(DEBUG)
+  cv::rectangle(roi_img_nearest, cv::Point(0,0), cv::Point(roi_img_nearest.cols, roi_img_nearest.rows), cv::Scalar(0,200,200), -1, 8);
 #endif
 
   verbose_log("writing to file %s using MSSIM %f", g_output_file.c_str(), max_mssim);
@@ -234,6 +233,14 @@ main(int argc, char **argv)
             throw InvalidCliArgException("File '%s' doesn't exist", optarg);
           }
           g_input_file = optarg;
+          break;
+
+        case 'k':
+          if (optarg) g_kernelSize = get_opt_arg<int>(optarg, "Invalid kernel size");
+          break;
+
+        case 'd':
+          if (optarg) g_gaussianBlurDeviation = get_opt_arg<int>(optarg, "Invalid Gaussian blur deviation");
           break;
 
         case 'o':
@@ -294,6 +301,8 @@ main(int argc, char **argv)
   verbose_log("input file: %s", g_input_file.c_str());
   verbose_log("output file: %s", g_output_file.c_str());
   verbose_log("threshold: %f", g_threshold);
+  verbose_log("blur kernel size: %d", g_kernelSize);
+  verbose_log("blur deviation: %d", g_gaussianBlurDeviation);
 
   try {
     while (optind < argc) {

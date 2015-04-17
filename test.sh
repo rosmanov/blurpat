@@ -24,7 +24,7 @@ fi
 : ${BLURPAT_MASKS_DIR:="$dir/tmp/m"}
 : ${masks_dir:="$BLURPAT_MASKS_DIR"}
 
-executable="$dir/bin/blurpat -vv"
+executable="$dir/bin/blurpat -vv -k 5 -d 100"
 masks=`find $masks_dir/ -type f`
 
 #####################################################################
