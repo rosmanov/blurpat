@@ -171,19 +171,32 @@ run()
     cv::bitwise_not(tpl_img, tpl_img_inverted);
 
     for (auto& img : {in_img, in_img_inverted}) {
-      cv::Rect in_img_roi(0, img.rows - g_kBottomLineHeight, img.cols, g_kBottomLineHeight);
+      //cv::Rect in_img_roi(0, img.rows - g_kBottomLineHeight, img.cols, g_kBottomLineHeight);
+      cv::Rect img_rect(0, 0, img.cols, img.rows);
+
+      cv::Rect tmp_roi(g_roi);
+      if (tmp_roi.width <= 0) tmp_roi.x = img_rect.width + tmp_roi.width;
+      if (tmp_roi.height <= 0) tmp_roi.y = img_rect.height + tmp_roi.height;
+      cv::Rect in_img_roi(tmp_roi & img_rect);
+      if (in_img_roi.area() == 0) {
+        error_log("ROI %d,%d %dx%d is out of bounds, skipping",
+            tmp_roi.x, tmp_roi.y, tmp_roi.width, tmp_roi.height);
+        continue;
+      }
+      verbose_log("using ROI %d,%d %dx%d",
+          tmp_roi.x, tmp_roi.y, tmp_roi.width, tmp_roi.height);
+
 
       for (auto& tpl : {tpl_img, tpl_img_inverted}) {
         // Find best matching location for current mask
         match_template(match_loc, img(in_img_roi), tpl);
 
         // Calculate similarity coefficient
-        cv::Rect roi(match_loc.x,
-            match_loc.y + (img.rows - g_kBottomLineHeight),
-            tpl.cols, tpl.rows);
+        cv::Rect roi(match_loc.x, match_loc.y, tpl.cols, tpl.rows);
+
         auto mssim = get_avg_MSSIM(tpl, img(roi));
 
-        verbose_log("roi: (%d, %d) %dx%d", roi.x, roi.y, roi.width, roi.height);
+        verbose_log("ROI: (%d, %d) %dx%d", roi.x, roi.y, roi.width, roi.height);
         verbose_log("MSSIM for %s: %f", mask_file.c_str(), mssim);
 
         if (mssim > max_mssim) {
@@ -251,6 +264,23 @@ main(int argc, char **argv)
           g_threshold = optarg ? get_opt_arg<int>(optarg, "Invalid threshold value") : 0;
           break;
 
+        case 'r':
+          {
+            if (!optarg) break;
+
+            const char* delim = ",";
+            char* pch;
+            if ((pch = strtok(optarg, delim)) == NULL) break;
+            g_roi.x = std::stoi(std::string(pch));
+            if ((pch = strtok(NULL, delim)) == NULL) break;
+            g_roi.y = std::stoi(std::string(pch));
+            if ((pch = strtok(NULL, delim)) == NULL) break;
+            g_roi.width = std::stoi(std::string(pch));
+            if ((pch = strtok(NULL, delim)) == NULL) break;
+            g_roi.height = std::stoi(std::string(pch));
+          }
+          break;
+
         case 'v':
           g_verbose++;
           break;
@@ -298,11 +328,15 @@ main(int argc, char **argv)
     exit(2);
   }
 
+  if (g_roi.width <= 0) g_roi.width = 1e6;
+  if (g_roi.height <= 0) g_roi.height = 1e6;
+
   verbose_log("input file: %s", g_input_file.c_str());
   verbose_log("output file: %s", g_output_file.c_str());
   verbose_log("threshold: %f", g_threshold);
   verbose_log("blur kernel size: %d", g_kernelSize);
   verbose_log("blur deviation: %d", g_gaussianBlurDeviation);
+  verbose_log("roi: (%d,%d) %dx%d", g_roi.x, g_roi.y, g_roi.width, g_roi.height);
 
   try {
     while (optind < argc) {

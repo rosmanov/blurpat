@@ -39,7 +39,7 @@ const char* g_program_name;
 const double g_kMinMatchMssim{0.1};
 /// Color used by cv::threshold()
 const int g_kThresholdColor{255};
-const int g_kBottomLineHeight{120};
+//const int g_kBottomLineHeight{120};
 
 /////////////////////////////////////////////////////////////////////
 // CLI options
@@ -50,6 +50,7 @@ std::string g_output_file;
 double g_threshold{80.};
 int g_kernelSize{3};
 int g_gaussianBlurDeviation{10};
+cv::Rect g_roi;
 
 /////////////////////////////////////////////////////////////////////
 /// Template for `printf`-like function.
@@ -63,9 +64,15 @@ const char* g_usage_template =
 " -o, --output             Path to output image.\n"
 " -d, --blur-deviation     Gaussian blur deviation. Default: 10\n"
 " -k, --blur-kernel-size   Gaussian blur kernel size. Default: 3\n"
-" -t, --threshold          Noise suppression threshold (0..255).\n";
+" -t, --threshold          Noise suppression threshold (0..255).\n"
+" -r, --roi                Region of interest as x,y,width,height.\n"
+"\nEXAMPLE:\n"
+"The following blurs a logo specified by logo19x24.jpg mask on in.jpg,\n"
+"sets 500px wide line at the bottom of in.jpg as the region of interest,\n"
+"writes the result to out.jpg:\n"
+"%1$s r 0,0,100000,-500 -t60 -i in.jpg -o out.jpg -v logo.jpg\n";
 
-const char *g_short_options = "hvi:o:d:k:t:";
+const char *g_short_options = "hvi:o:d:k:t:r:";
 const struct option g_long_options[] = {
   {"help",             no_argument,       NULL, 'h'},
   {"verbose",          no_argument,       NULL, 'v'},
@@ -74,6 +81,7 @@ const struct option g_long_options[] = {
   {"blur-deviation",   required_argument, NULL, 'd'},
   {"blur-kernel-size", required_argument, NULL, 'k'},
   {"threshold",        required_argument, NULL, 't'},
+  {"roi",              required_argument, NULL, 'r'},
   {0,                  0,                 0,    0}
 };
 
