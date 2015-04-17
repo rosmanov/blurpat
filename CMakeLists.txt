@@ -15,6 +15,7 @@ find_package(LibOpenCV REQUIRED)
 
 if (DEBUG)
   set (CMAKE_BUILD_TYPE "Debug")
+  add_definitions(-DDEBUG)
 else (DEBUG)
   set (CMAKE_BUILD_TYPE "Release")
 endif (DEBUG)

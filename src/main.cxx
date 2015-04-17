@@ -150,6 +150,11 @@ run()
   cv::threshold(in_img, in_img, g_threshold, g_kThresholdColor, CV_THRESH_BINARY);
   cv::threshold(in_img_inverted, in_img_inverted, g_threshold, g_kThresholdColor, CV_THRESH_BINARY);
 
+#ifdef DEBUG
+  cv::imwrite("in_img.jpg", in_img);
+  cv::imwrite("in_img_inverted.jpg", in_img_inverted);
+#endif
+
   // Process mask files
   for (auto& mask_file : g_mask_files) {
     cv::Mat tpl_img(cv::imread(mask_file, 1));
@@ -173,7 +178,8 @@ run()
         match_template(match_loc, img(in_img_roi), tpl);
 
         // Calculate similarity coefficient
-        cv::Rect roi(match_loc.x, match_loc.y + (img.rows - g_kBottomLineHeight),
+        cv::Rect roi(match_loc.x,
+            match_loc.y + (img.rows - g_kBottomLineHeight),
             tpl.cols, tpl.rows);
         auto mssim = get_avg_MSSIM(tpl, img(roi));
 
@@ -192,14 +198,15 @@ run()
     throw ErrorException("Unable to find a good matching pattern");
   }
 
+#if DEBUG
+  cv::rectangle(roi_img_nearest, cv::Point(0,0), cv::Point(roi_img_nearest.cols, roi_img_nearest.rows), cv::Scalar(0,200,200), -1, 8);
+#else
   cv::GaussianBlur(roi_img_nearest, roi_img_nearest,
       cv::Size(g_kKernelSize, g_kKernelSize),
       g_kGaussianBlurDeviation);
-#if 0
-  //cv::rectangle(roi_img_nearest, cv::Point(0,0), cv::Point(roi_img_nearest.cols, roi_img_nearest.rows), cv::Scalar(0,200,200), -1, 8);
 #endif
 
-  verbose_log("writing to file %s", g_output_file.c_str());
+  verbose_log("writing to file %s using MSSIM %f", g_output_file.c_str(), max_mssim);
   if (!cv::imwrite(g_output_file, out_img)) {
     throw ErrorException("failed to save to file " + g_output_file);
   }
@@ -231,6 +238,10 @@ main(int argc, char **argv)
 
         case 'o':
           g_output_file = optarg;
+          break;
+
+        case 't':
+          g_threshold = optarg ? get_opt_arg<int>(optarg, "Invalid threshold value") : 0;
           break;
 
         case 'v':
@@ -282,6 +293,7 @@ main(int argc, char **argv)
 
   verbose_log("input file: %s", g_input_file.c_str());
   verbose_log("output file: %s", g_output_file.c_str());
+  verbose_log("threshold: %f", g_threshold);
 
   try {
     while (optind < argc) {
