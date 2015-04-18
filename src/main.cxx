@@ -175,8 +175,9 @@ run()
       cv::Rect img_rect(0, 0, img.cols, img.rows);
 
       cv::Rect tmp_roi(g_roi);
-      if (tmp_roi.width <= 0) tmp_roi.x = img_rect.width + tmp_roi.width;
-      if (tmp_roi.height <= 0) tmp_roi.y = img_rect.height + tmp_roi.height;
+      if (tmp_roi.x < 0) tmp_roi.x = img_rect.width + tmp_roi.x;
+      if (tmp_roi.y < 0) tmp_roi.y = img_rect.height + tmp_roi.y;
+
       cv::Rect in_img_roi(tmp_roi & img_rect);
       if (in_img_roi.area() == 0) {
         error_log("ROI %d,%d %dx%d is out of bounds, skipping",
@@ -184,16 +185,19 @@ run()
         continue;
       }
       verbose_log("using ROI %d,%d %dx%d",
-          tmp_roi.x, tmp_roi.y, tmp_roi.width, tmp_roi.height);
-
+          in_img_roi.x, in_img_roi.y, in_img_roi.width, in_img_roi.height);
 
       for (auto& tpl : {tpl_img, tpl_img_inverted}) {
         // Find best matching location for current mask
         match_template(match_loc, img(in_img_roi), tpl);
 
         // Calculate similarity coefficient
-        cv::Rect roi(match_loc.x, match_loc.y, tpl.cols, tpl.rows);
+        cv::Rect roi(match_loc.x + (img.cols - in_img_roi.width),
+            match_loc.y + (img.rows - in_img_roi.height),
+            tpl.cols, tpl.rows);
 
+        verbose_log("xxx roi: %d %d %d %d", roi.x, roi.y, roi.width, roi.height);
+        cv::imwrite("xxx.jpg", img);
         auto mssim = get_avg_MSSIM(tpl, img(roi));
 
         verbose_log("ROI: (%d, %d) %dx%d", roi.x, roi.y, roi.width, roi.height);

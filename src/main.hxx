@@ -70,7 +70,7 @@ const char* g_usage_template =
 "The following blurs a logo specified by logo19x24.jpg mask on in.jpg,\n"
 "sets 500px wide line at the bottom of in.jpg as the region of interest,\n"
 "writes the result to out.jpg:\n"
-"%1$s r 0,0,100000,-500 -t60 -i in.jpg -o out.jpg -v logo.jpg\n";
+"%1$s -r 0,-500,100000,100000 -t60 -i in.jpg -o out.jpg -v logo.jpg\n";
 
 const char *g_short_options = "hvi:o:d:k:t:r:";
 const struct option g_long_options[] = {

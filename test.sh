@@ -7,6 +7,7 @@
 dir=$(cd $(dirname "$0"); pwd)
 cd $dir
 
+
 declare -A img
 #declare -A img=(
 #[org.jpg]=out.jpg
@@ -24,7 +25,7 @@ fi
 : ${BLURPAT_MASKS_DIR:="$dir/tmp/m"}
 : ${masks_dir:="$BLURPAT_MASKS_DIR"}
 
-executable="$dir/bin/blurpat -vv -k 5 -d 100"
+executable="$dir/bin/blurpat -vv -k 5 -d 100 -r 0,-200,10000,10000"
 masks=`find $masks_dir/ -type f`
 
 #####################################################################
@@ -42,7 +43,7 @@ function get_best_threshold()
 
   local max_mssim=0
   local best_threshold=35
-  for threshold in 25 30 35 45 50 60 70 80 85; do
+  for threshold in 35 45 60 80; do
     mssim=$($executable -t${threshold} -i "${org_img}" -o "${out_img}" $masks \
       | grep 'using MSSIM' | sed -r 's/.* ([0-9\.]+)$/\1/g')
 
