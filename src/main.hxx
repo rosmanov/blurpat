@@ -1,3 +1,20 @@
+/* \file
+ *
+ * \copyright Copyright © 2015  Ruslan Osmanov <rrosmanov@gmail.com>
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
 #pragma once
 #ifndef MAIN_HXX
 #define MAIN_HXX
@@ -13,16 +30,16 @@
 
 /////////////////////////////////////////////////////////////////////
 
-#define error_log(fmt, ...) fprintf(stderr,  fmt  "\n", __VA_ARGS__)
-#define error_log0(str) fprintf(stderr,  str  "\n")
+#define ERROR_LOG(fmt, ...) fprintf(stderr,  fmt  "\n", __VA_ARGS__)
+#define ERROR_LOG0(str) fprintf(stderr,  str  "\n")
 
-#define verbose_log(fmt, ...)        \
+#define VERBOSE_LOG(fmt, ...)        \
   do {                               \
     if (g_verbose) {                 \
       printf(fmt "\n", __VA_ARGS__); \
     }                                \
   } while (0)
-#define verbose_log2(fmt, ...)       \
+#define VERBOSE_LOG2(fmt, ...)       \
   do {                               \
     if (g_verbose > 1) {             \
       printf(fmt "\n", __VA_ARGS__); \
@@ -33,13 +50,12 @@
 
 int g_verbose{0};
 
-const char* g_program_name;
+const char* g_kProgramName;
 /// Minimum MSSIM (similarity) coefficient for a pattern match to be
 /// considered "good enough"
 const double g_kMinMatchMssim{0.1};
 /// Color used by cv::threshold()
 const int g_kThresholdColor{255};
-//const int g_kBottomLineHeight{120};
 
 /////////////////////////////////////////////////////////////////////
 // CLI options
@@ -48,14 +64,14 @@ std::vector<std::string> g_mask_files;
 std::string g_input_file;
 std::string g_output_file;
 double g_threshold{80.};
-int g_kernelSize{3};
-int g_gaussianBlurDeviation{10};
+int g_kernel_size{3};
+int g_gaussian_blur_deviation{10};
 cv::Rect g_roi;
-int g_blurMargin[4]{0,0,0,0};
+int g_blur_margin[4]{0,0,0,0};
 
 /////////////////////////////////////////////////////////////////////
 /// Template for `printf`-like function.
-const char* g_usage_template =
+const char* g_kUsageTemplate{
 "\nUsage: %1$s OPTIONS mask1 [mask2[, mask3[, ...]]]\n\n"
 "OPTIONS:\n"
 " -h, --help               Display this help.\n"
@@ -74,10 +90,10 @@ const char* g_usage_template =
 "The following blurs a logo specified by logo19x24.jpg mask on in.jpg,\n"
 "sets 500px wide line at the bottom of in.jpg as the region of interest,\n"
 "writes the result to out.jpg:\n"
-"%1$s -r 0,-500 -t60 -i in.jpg -o out.jpg -v logo.jpg\n";
+"%1$s -r 0,-500 -t60 -i in.jpg -o out.jpg -v logo.jpg\n"};
 
-const char *g_short_options = "hvi:o:d:k:t:r:m:";
-const struct option g_long_options[] = {
+const char *g_kShortOptions = "hvi:o:d:k:t:r:m:";
+const struct option g_kLongOptions[] = {
   {"help",             no_argument,       NULL, 'h'},
   {"verbose",          no_argument,       NULL, 'v'},
   {"input",            required_argument, NULL, 'i'},
@@ -92,8 +108,8 @@ const struct option g_long_options[] = {
 
 /////////////////////////////////////////////////////////////////////
 
-template <class T> T
-get_opt_arg(const std::string& optarg, const char* format, ...)
+template<class T> T
+GetOptArg(const std::string& optarg, const char* format, ...)
 {
   T result;
   std::istringstream is(optarg);
@@ -116,8 +132,8 @@ get_opt_arg(const std::string& optarg, const char* format, ...)
   throw InvalidCliArgException(error);
 }
 
-template int get_opt_arg(const std::string& optarg, const char* format, ...);
-template double get_opt_arg(const std::string& optarg, const char* format, ...);
+template int GetOptArg(const std::string& optarg, const char* format, ...);
+template double GetOptArg(const std::string& optarg, const char* format, ...);
 
 #endif // MAIN_HXX
 // vim: et ts=2 sts=2 sw=2
