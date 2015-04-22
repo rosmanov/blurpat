@@ -126,7 +126,7 @@ run()
   cv::Point match_loc;
   cv::Mat in_img;
   cv::Mat in_img_inverted;
-  cv::Mat roi_img_nearest;
+  cv::Rect roi_nearest;
   cv::Mat out_img;
   double max_mssim{0.};
 
@@ -149,11 +149,6 @@ run()
   // Suppress noise
   cv::threshold(in_img, in_img, g_threshold, g_kThresholdColor, CV_THRESH_BINARY);
   cv::threshold(in_img_inverted, in_img_inverted, g_threshold, g_kThresholdColor, CV_THRESH_BINARY);
-
-#ifdef DEBUG
-  cv::imwrite("in_img.jpg", in_img);
-  cv::imwrite("in_img_inverted.jpg", in_img_inverted);
-#endif
 
   // Process mask files
   for (auto& mask_file : g_mask_files) {
@@ -196,8 +191,6 @@ run()
             match_loc.y + (img.rows - in_img_roi.height),
             tpl.cols, tpl.rows);
 
-        verbose_log("xxx roi: %d %d %d %d", roi.x, roi.y, roi.width, roi.height);
-        cv::imwrite("xxx.jpg", img);
         auto mssim = get_avg_MSSIM(tpl, img(roi));
 
         verbose_log("ROI: (%d, %d) %dx%d", roi.x, roi.y, roi.width, roi.height);
@@ -205,7 +198,7 @@ run()
 
         if (mssim > max_mssim) {
           max_mssim = mssim;
-          roi_img_nearest = out_img(roi);
+          roi_nearest = roi;
         }
       }
     }
@@ -215,11 +208,19 @@ run()
     throw ErrorException("Unable to find a good matching pattern");
   }
 
+  roi_nearest.x      -= g_blurMargin[3];
+  roi_nearest.y      -= g_blurMargin[0];
+  roi_nearest.width  += g_blurMargin[1] + g_blurMargin[3];
+  roi_nearest.height += g_blurMargin[2] + g_blurMargin[0];
+  cv::Mat roi_img_nearest(out_img(roi_nearest));
+
   cv::GaussianBlur(roi_img_nearest, roi_img_nearest,
       cv::Size(g_kernelSize, g_kernelSize),
       g_gaussianBlurDeviation);
 #if defined(DEBUG)
-  cv::rectangle(roi_img_nearest, cv::Point(0,0), cv::Point(roi_img_nearest.cols, roi_img_nearest.rows), cv::Scalar(0,200,200), -1, 8);
+  cv::rectangle(roi_img_nearest, cv::Point(0,0),
+      cv::Point(roi_img_nearest.cols, roi_img_nearest.rows),
+      cv::Scalar(0,200,200), -1, 8);
 #endif
 
   verbose_log("writing to file %s using MSSIM %f", g_output_file.c_str(), max_mssim);
@@ -285,6 +286,23 @@ main(int argc, char **argv)
           }
           break;
 
+        case 'm':
+          {
+            if (!optarg) break;
+
+            const char* delim = ",";
+            char* pch;
+            if ((pch = strtok(optarg, delim)) == NULL) break;
+            g_blurMargin[0] = std::stoi(std::string(pch));
+            if ((pch = strtok(NULL, delim)) == NULL) break;
+            g_blurMargin[1] = std::stoi(std::string(pch));
+            if ((pch = strtok(NULL, delim)) == NULL) break;
+            g_blurMargin[2] = std::stoi(std::string(pch));
+            if ((pch = strtok(NULL, delim)) == NULL) break;
+            g_blurMargin[3] = std::stoi(std::string(pch));
+          }
+          break;
+
         case 'v':
           g_verbose++;
           break;
@@ -341,6 +359,7 @@ main(int argc, char **argv)
   verbose_log("blur kernel size: %d", g_kernelSize);
   verbose_log("blur deviation: %d", g_gaussianBlurDeviation);
   verbose_log("roi: (%d,%d) %dx%d", g_roi.x, g_roi.y, g_roi.width, g_roi.height);
+  verbose_log("blur margin: %d %d %d %d", g_blurMargin[0], g_blurMargin[1], g_blurMargin[2], g_blurMargin[3]);
 
   try {
     while (optind < argc) {

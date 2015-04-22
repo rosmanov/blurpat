@@ -51,6 +51,7 @@ double g_threshold{80.};
 int g_kernelSize{3};
 int g_gaussianBlurDeviation{10};
 cv::Rect g_roi;
+int g_blurMargin[4]{0,0,0,0};
 
 /////////////////////////////////////////////////////////////////////
 /// Template for `printf`-like function.
@@ -65,14 +66,17 @@ const char* g_usage_template =
 " -d, --blur-deviation     Gaussian blur deviation. Default: 10\n"
 " -k, --blur-kernel-size   Gaussian blur kernel size. Default: 3\n"
 " -t, --threshold          Noise suppression threshold (0..255).\n"
-" -r, --roi                Region of interest as x,y,width,height.\n"
+" -r, --roi                Region of interest(ROI) as x,y,width,height.\n"
+"                          (width and height are equal to 1000000 by default)\n"
+" -m, --blur-margin        Blur margin relative to the ROI as top,right,bottom,left integers.\n"
+"                          Default: 0,0,0,0\n"
 "\nEXAMPLE:\n"
 "The following blurs a logo specified by logo19x24.jpg mask on in.jpg,\n"
 "sets 500px wide line at the bottom of in.jpg as the region of interest,\n"
 "writes the result to out.jpg:\n"
-"%1$s -r 0,-500,100000,100000 -t60 -i in.jpg -o out.jpg -v logo.jpg\n";
+"%1$s -r 0,-500 -t60 -i in.jpg -o out.jpg -v logo.jpg\n";
 
-const char *g_short_options = "hvi:o:d:k:t:r:";
+const char *g_short_options = "hvi:o:d:k:t:r:m:";
 const struct option g_long_options[] = {
   {"help",             no_argument,       NULL, 'h'},
   {"verbose",          no_argument,       NULL, 'v'},
@@ -82,6 +86,7 @@ const struct option g_long_options[] = {
   {"blur-kernel-size", required_argument, NULL, 'k'},
   {"threshold",        required_argument, NULL, 't'},
   {"roi",              required_argument, NULL, 'r'},
+  {"blur-margin",      required_argument, NULL, 'm'},
   {0,                  0,                 0,    0}
 };
 
