@@ -241,7 +241,9 @@ Run()
       cv::Scalar(0,200,200), -1, 8);
 #endif
 
-  VERBOSE_LOG("writing to file %s using MSSIM %f", g_output_file.c_str(), max_mssim);
+  VERBOSE_LOG("writing to file %s using MSSIM %f roi %d,%d,%d,%d",
+      g_output_file.c_str(), max_mssim,
+      roi_nearest.x, roi_nearest.y, roi_nearest.width, roi_nearest.height);
   if (!g_dry_run) {
     if (!cv::imwrite(g_output_file, out_img)) {
       throw ErrorException("failed to save to file " + g_output_file);
