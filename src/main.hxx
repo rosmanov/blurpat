@@ -68,6 +68,7 @@ int g_blur_margin[4]{0,0,0,0};
 /// Minimum MSSIM (similarity) coefficient for a pattern match to be
 /// considered "good enough"
 double g_min_match_mssim{0.1};
+bool g_dry_run{false};
 
 /////////////////////////////////////////////////////////////////////
 /// Template for `printf`-like function.
@@ -88,13 +89,14 @@ const char* g_kUsageTemplate{
 "                          Default: 0,0,0,0\n"
 " -s, --min-mssim          Minimum MSSIM value to consider a match successful.\n"
 "                          Possible values: 0..1 incl. Default: 0.1\n"
+" -T, --dry-run            Don't write to FS\n"
 "\nEXAMPLE:\n"
 "The following blurs a logo specified by logo19x24.jpg mask on in.jpg,\n"
 "sets 500px wide line at the bottom of in.jpg as the region of interest,\n"
 "writes the result to out.jpg:\n"
 "%1$s -r 0,-500 -t60 -i in.jpg -o out.jpg -v logo.jpg\n"};
 
-const char *g_kShortOptions = "hvi:o:d:k:t:r:m:s:";
+const char *g_kShortOptions = "hvi:o:d:k:t:r:m:s:T";
 const struct option g_kLongOptions[] = {
   {"help",             no_argument,       NULL, 'h'},
   {"verbose",          no_argument,       NULL, 'v'},
@@ -106,6 +108,7 @@ const struct option g_kLongOptions[] = {
   {"roi",              required_argument, NULL, 'r'},
   {"blur-margin",      required_argument, NULL, 'm'},
   {"min-mssim",        required_argument, NULL, 's'},
+  {"dry-run",          no_argument,       NULL, 'T'},
   {0,                  0,                 0,    0}
 };
 

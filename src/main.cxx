@@ -242,8 +242,10 @@ Run()
 #endif
 
   VERBOSE_LOG("writing to file %s using MSSIM %f", g_output_file.c_str(), max_mssim);
-  if (!cv::imwrite(g_output_file, out_img)) {
-    throw ErrorException("failed to save to file " + g_output_file);
+  if (!g_dry_run) {
+    if (!cv::imwrite(g_output_file, out_img)) {
+      throw ErrorException("failed to save to file " + g_output_file);
+    }
   }
 }
 
@@ -326,6 +328,10 @@ main(int argc, char **argv)
           g_min_match_mssim = GetOptArg<double>(optarg, "Invalid min. MSSIM value");
           break;
 
+        case 'T':
+          g_dry_run = static_cast<bool>(GetOptArg<int>(optarg, ""));
+          break;
+
         case 'v':
           g_verbose++;
           break;
@@ -389,6 +395,7 @@ main(int argc, char **argv)
   VERBOSE_LOG("roi: (%d,%d) %dx%d", g_roi.x, g_roi.y, g_roi.width, g_roi.height);
   VERBOSE_LOG("blur margin: %d %d %d %d", g_blur_margin[0], g_blur_margin[1], g_blur_margin[2], g_blur_margin[3]);
   VERBOSE_LOG("min. MSSIM: %f", g_min_match_mssim);
+  VERBOSE_LOG("dry run: %d", static_cast<int>(g_dry_run));
 
   try {
     while (optind < argc) {
