@@ -222,7 +222,7 @@ Run()
     }
   }
 
-  if (max_mssim <= g_kMinMatchMssim) {
+  if (max_mssim <= g_min_match_mssim) {
     throw ErrorException("Unable to find a good matching pattern");
   }
 
@@ -322,6 +322,10 @@ main(int argc, char **argv)
           }
           break;
 
+        case 's':
+          g_min_match_mssim = GetOptArg<double>(optarg, "Invalid min. MSSIM value");
+          break;
+
         case 'v':
           g_verbose++;
           break;
@@ -362,6 +366,11 @@ main(int argc, char **argv)
       ERROR_LOG0("input file expected");
       break;
     }
+    if (g_min_match_mssim < 0 || g_min_match_mssim > 1) {
+      ERROR_LOG0("min. MSSIM value is out of range [0.0 .. 1.0]");
+      break;
+    }
+
     error = false;
   } while (0);
   if (error) {
@@ -379,6 +388,7 @@ main(int argc, char **argv)
   VERBOSE_LOG("blur deviation: %d", g_gaussian_blur_deviation);
   VERBOSE_LOG("roi: (%d,%d) %dx%d", g_roi.x, g_roi.y, g_roi.width, g_roi.height);
   VERBOSE_LOG("blur margin: %d %d %d %d", g_blur_margin[0], g_blur_margin[1], g_blur_margin[2], g_blur_margin[3]);
+  VERBOSE_LOG("min. MSSIM: %f", g_min_match_mssim);
 
   try {
     while (optind < argc) {

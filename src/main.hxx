@@ -51,9 +51,6 @@
 int g_verbose{0};
 
 const char* g_kProgramName;
-/// Minimum MSSIM (similarity) coefficient for a pattern match to be
-/// considered "good enough"
-const double g_kMinMatchMssim{0.1};
 /// Color used by cv::threshold()
 const int g_kThresholdColor{255};
 
@@ -68,6 +65,9 @@ int g_kernel_size{3};
 int g_gaussian_blur_deviation{10};
 cv::Rect g_roi;
 int g_blur_margin[4]{0,0,0,0};
+/// Minimum MSSIM (similarity) coefficient for a pattern match to be
+/// considered "good enough"
+double g_min_match_mssim{0.1};
 
 /////////////////////////////////////////////////////////////////////
 /// Template for `printf`-like function.
@@ -86,13 +86,15 @@ const char* g_kUsageTemplate{
 "                          (width and height are equal to 1000000 by default)\n"
 " -m, --blur-margin        Blur margin relative to the ROI as top,right,bottom,left integers.\n"
 "                          Default: 0,0,0,0\n"
+" -s, --min-mssim          Minimum MSSIM value to consider a match successful.\n"
+"                          Possible values: 0..1 incl. Default: 0.1\n"
 "\nEXAMPLE:\n"
 "The following blurs a logo specified by logo19x24.jpg mask on in.jpg,\n"
 "sets 500px wide line at the bottom of in.jpg as the region of interest,\n"
 "writes the result to out.jpg:\n"
 "%1$s -r 0,-500 -t60 -i in.jpg -o out.jpg -v logo.jpg\n"};
 
-const char *g_kShortOptions = "hvi:o:d:k:t:r:m:";
+const char *g_kShortOptions = "hvi:o:d:k:t:r:m:s:";
 const struct option g_kLongOptions[] = {
   {"help",             no_argument,       NULL, 'h'},
   {"verbose",          no_argument,       NULL, 'v'},
@@ -103,6 +105,7 @@ const struct option g_kLongOptions[] = {
   {"threshold",        required_argument, NULL, 't'},
   {"roi",              required_argument, NULL, 'r'},
   {"blur-margin",      required_argument, NULL, 'm'},
+  {"min-mssim",        required_argument, NULL, 's'},
   {0,                  0,                 0,    0}
 };
 
