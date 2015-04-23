@@ -197,7 +197,7 @@ Run()
             tmp_roi.x, tmp_roi.y, tmp_roi.width, tmp_roi.height);
         continue;
       }
-      VERBOSE_LOG("using ROI %d,%d %dx%d",
+      VERBOSE_LOG2("using ROI %d,%d %dx%d",
           in_img_roi.x, in_img_roi.y, in_img_roi.width, in_img_roi.height);
 
       for (auto& tpl : {tpl_img, tpl_img_inverted}) {
@@ -211,8 +211,8 @@ Run()
 
         auto mssim = GetAvgMSSIM(tpl, img(roi));
 
-        VERBOSE_LOG("ROI: (%d, %d) %dx%d", roi.x, roi.y, roi.width, roi.height);
-        VERBOSE_LOG("MSSIM for %s: %f", mask_file.c_str(), mssim);
+        VERBOSE_LOG2("ROI: (%d, %d) %dx%d", roi.x, roi.y, roi.width, roi.height);
+        VERBOSE_LOG2("MSSIM for %s: %f", mask_file.c_str(), mssim);
 
         if (mssim > max_mssim) {
           max_mssim = mssim;
