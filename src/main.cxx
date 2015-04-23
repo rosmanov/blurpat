@@ -329,7 +329,7 @@ main(int argc, char **argv)
           break;
 
         case 'T':
-          g_dry_run = static_cast<bool>(GetOptArg<int>(optarg, ""));
+          g_dry_run = true;
           break;
 
         case 'v':
