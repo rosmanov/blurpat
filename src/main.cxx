@@ -205,8 +205,8 @@ Run()
         MatchTemplate(match_loc, img(in_img_roi), tpl);
 
         // Calculate similarity coefficient
-        cv::Rect roi(match_loc.x + (img.cols - in_img_roi.width),
-            match_loc.y + (img.rows - in_img_roi.height),
+        cv::Rect roi(match_loc.x + in_img_roi.x,
+            match_loc.y + in_img_roi.y,
             tpl.cols, tpl.rows);
 
         auto mssim = GetAvgMSSIM(tpl, img(roi));
